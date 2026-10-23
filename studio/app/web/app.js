@@ -50,8 +50,10 @@ function shell(active) {
   }).join('');
   return `
     <div class="shell">
-      <aside class="sidebar">
-        <div class="brand"><span class="brand__dot"></span> FastAPI Studio</div>
+      <aside class="sidebar" id="sidebar">
+        <a class="brand" href="#/dashboard" aria-label="Grupo Colina">
+          <img class="brand__logo" src="/logo-colina.png" alt="Grupo Colina">
+        </a>
         <nav class="nav">${navHtml}</nav>
         <div class="sidebar__foot">
           <a href="/api/v1/docs" target="_blank" rel="noopener">Swagger</a>
@@ -60,9 +62,13 @@ function shell(active) {
           <a href="/health" target="_blank" rel="noopener">/health</a>
         </div>
       </aside>
+      <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
       <div class="main">
         <header class="topbar">
-          <div class="topbar__title" id="page-title"></div>
+          <div class="topbar__lead">
+            <button class="menu-toggle" type="button" id="btn-menu" aria-label="Abrir menu">☰</button>
+            <div class="topbar__title" id="page-title"></div>
+          </div>
           <div class="topbar__user">
             <span class="user-chip">
               <strong>${esc(user.name || user.email || 'sessão')}</strong>
@@ -131,18 +137,37 @@ function bindChrome() {
   if (logout) logout.addEventListener('click', doLogout);
   const change = qs('#btn-change-password');
   if (change) change.addEventListener('click', openChangePassword);
+
+  // Sidebar em modo drawer abaixo de 768px (identidade Colina Core, secao 3.5).
+  const shell = qs('.shell');
+  const menu = qs('#btn-menu');
+  const backdrop = qs('#sidebar-backdrop');
+  if (shell && menu) {
+    const closeNav = () => shell.classList.remove('shell--nav-open');
+    menu.addEventListener('click', () => shell.classList.toggle('shell--nav-open'));
+    if (backdrop) backdrop.addEventListener('click', closeNav);
+    document.addEventListener(
+      'keydown',
+      (event) => {
+        if (event.key === 'Escape') closeNav();
+      },
+      { once: true },
+    );
+  }
 }
 
 function renderLogin() {
   document.getElementById('app').innerHTML = `
     <div class="login">
       <form class="login__card" id="login-form">
+        <img class="login__logo" src="/logo-colina.png" alt="Grupo Colina">
         <h1>FastAPI Studio</h1>
         <p class="muted">Painel administrativo</p>
         <label class="field"><span>E-mail</span><input type="email" name="email" autocomplete="username" required></label>
         <label class="field"><span>Senha</span><input type="password" name="password" autocomplete="current-password" required></label>
         <button class="btn btn--primary" type="submit">Entrar</button>
         <div class="login__error" id="login-error" hidden></div>
+        <p class="login__foot">Em caso de problemas, contate o administrador do sistema.</p>
       </form>
     </div>`;
   const form = qs('#login-form');

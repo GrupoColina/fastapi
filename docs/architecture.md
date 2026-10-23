@@ -64,6 +64,25 @@ Regra de ouro: **nenhum arquivo dentro de `fastapi/` é modificado.**
       └───────────────────┘                  └──────────────────────────────┘
 ```
 
+### 2.1 Identidade visual do painel
+
+A SPA segue o **Design System Colina Core** (padrão visual obrigatório do Grupo Colina),
+sem tema escuro e sem dependência de folha de estilo externa:
+
+- todos os tokens da paleta são declarados como custom properties em `:root`, em
+  `studio/app/web/styles.css` — não há hex solto nos módulos JavaScript;
+- paleta: `primary #1e3a8a`, `base #ffffff`, `surface #e5e7eb`, `text-strong #374151`,
+  `text-muted #64748b`, `page-bg #f8f9fb`, `surface-soft #f8fafc`,
+  `primary-tint #eef2fb`, `primary-soft #3355a3`, `text-faint #94a3b8`, mais as três
+  tintas semânticas (sucesso `#047857`/`#ecfdf5`, alerta `#b45309`/`#fffbeb`,
+  erro `#b91c1c`/`#fef2f2`);
+- raio padrão de 8px (12px em modal e cartão de login), bordas de 1px e ausência de
+  sombras pronunciadas, gradientes ou glassmorphism;
+- o logo oficial do Grupo Colina é embutido em `app/web/logo-colina.png` e aparece
+  obrigatoriamente no topo da sidebar e no cartão de login;
+- sidebar clara (`#ffffff`) com item ativo em `primary-tint` + indicador de 3px em
+  `primary`; abaixo de 768px a sidebar vira gaveta (*drawer*) acionada pela topbar.
+
 ---
 
 ## 3. Banco de metadados (Single Source of Truth)

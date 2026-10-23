@@ -29,6 +29,12 @@ nativos — sem bundler e sem CDN. Telas implementadas e ligadas à API real:
 | Logs | `app/web/views/logs.js` | telemetria de requisições e trilha de auditoria |
 | Documentação | `app/web/views/docs.js` | abre OpenAPI/Swagger/ReDoc do runtime |
 
+A interface segue o **Design System Colina Core** (padrão visual obrigatório do Grupo
+Colina): tema claro único, tokens da paleta declarados em `:root` no `styles.css` e
+componentes (botões, inputs, cards, tabelas, modais e toasts) construídos sobre as cores
+oficiais `#1e3a8a` / `#e5e7eb` / `#374151` / `#64748b`. O logo oficial do Grupo Colina
+(`app/web/logo-colina.png`) aparece no topo da sidebar e no cartão de login.
+
 ### 1.2 API administrativa (`/api/admin`)
 52 rotas em 7 routers (`auth`, `users`, `projects`, `datasources`, `endpoints`,
 `api_keys`, `logs`). Inclui:
