@@ -143,7 +143,6 @@ Fonte: [`backlog.md`](backlog.md).
 | Item | Motivo |
 |---|---|
 | Execução de `test_mssql_adapter.py` (6 casos) contra SQL Server real | sem instância acessível; requer `STUDIO_TEST_MSSQL_DSN` |
-| Execução de `test_docker_smoke.py` (1 caso) | requer `STUDIO_TEST_DOCKER=1` |
 | Cadastro e teste de uma **conexão SQL Server real** pelo painel | mesma dependência externa acima |
 
 Nenhuma outra pendência de escopo.
@@ -158,20 +157,22 @@ Nenhuma outra pendência de escopo.
 |---|---|---|
 | Local | `.\.venv\Scripts\python.exe -m pytest -p no:warnings --tb=line` | **166 passed, 7 skipped** |
 | TZ=UTC | `$env:TZ='UTC'; pytest -p no:warnings --tb=line` | **166 passed, 7 skipped** |
+| Local + Docker | `$env:STUDIO_TEST_DOCKER='1'; pytest -p no:warnings --tb=line` | **167 passed, 6 skipped** |
+| TZ=UTC + Docker | `$env:STUDIO_TEST_DOCKER='1'; $env:TZ='UTC'; pytest -p no:warnings --tb=line` | **167 passed, 6 skipped** |
 
 Cobertura por arquivo: `test_config`, `test_security`, `test_logging_redaction`,
 `test_errors`, `test_rate_limit`, `test_migrations`, `test_datasources`, `test_sql_guard`,
-`test_compiler`, `test_advanced`, `test_admin_api`, `test_e2e_flow`, `test_mssql_adapter`
-(marcado), `test_docker_smoke` (marcado).
+`test_compiler`, `test_advanced`, `test_admin_api`, `test_e2e_flow`, `test_docker_smoke`
+(marcado), `test_mssql_adapter` (marcado).
 
-### 4.2 Testes que dependem de infraestrutura externa (não executados)
+### 4.2 Testes que dependem de infraestrutura externa
 
-| Teste | Marca | Dependência | Como executar |
+| Teste | Marca | Dependência | Situação |
 |---|---|---|---|
-| `tests/test_mssql_adapter.py` (6) | `pytest.mark.mssql` | SQL Server real + ODBC 18 | `STUDIO_TEST_MSSQL_DSN=... pytest -m mssql` |
-| `tests/test_docker_smoke.py` (1) | `pytest.mark.docker` | Docker + imagem construída | `STUDIO_TEST_DOCKER=1 pytest -m docker` |
+| `tests/test_docker_smoke.py` (1) | `pytest.mark.docker` | Docker + compose | **executado**: 1 passed (`docker compose config --quiet` → exit 0) |
+| `tests/test_mssql_adapter.py` (6) | `pytest.mark.mssql` | SQL Server real + ODBC 18 | **não executado**; requer `STUDIO_TEST_MSSQL_DSN=... pytest -m mssql` |
 
-Os 7 `skipped` acima **não** foram declarados aprovados.
+Os 6 `skipped` (`test_mssql_adapter.py`) **não** foram declarados aprovados.
 
 ### 4.3 Migrações
 
@@ -360,7 +361,7 @@ python-tds, mas a execução contra um servidor real depende de infraestrutura e
   devolvem 404 JSON.
 
 ### 8.3 Não verificado
-- `tests/test_docker_smoke.py` (marca `docker`) não foi executado.
+- `tests/test_mssql_adapter.py` (marca `mssql`) não foi executado — depende de SQL Server real.
 - Não foram executados testes de carga, de penetração externa nem auditoria de
   dependências; os testes de segurança cobrem os controles implementados (hash de senha,
   JWT, API keys, cifra, escopos, rate limit, redação de PII).

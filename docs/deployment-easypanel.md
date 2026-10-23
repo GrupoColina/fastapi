@@ -126,8 +126,13 @@ O Easypanel constrói a imagem a partir do repositório Git. Passo a passo:
    (usuário/senha/base `studio`). Anote o hostname interno (ex.: `db` ou o nome completo do
    serviço interno, como `studio_db`).
 2. **Aplicação** — em *Create Service → App*, aponte para o repositório Git e configure:
-   - **Build**: Dockerfile.
-   - **Build context / caminho**: `studio` (o Dockerfile está em `studio/Dockerfile`).
+   - **Source → Build Path**: `/studio`. **Este campo é obrigatório.** O Build Path é, ao
+     mesmo tempo, a raiz de detecção e o **contexto do `docker build`**; o caminho do
+     Dockerfile é resolvido a partir dele e um `COPY` não consegue sair do contexto.
+     Deixá-lo em `/` faz o build falhar com
+     `failed to calculate checksum ... "/app": not found`.
+   - **Build**: Dockerfile, com o caminho padrão `Dockerfile` (resolvido como
+     `/studio/Dockerfile`). O `.dockerignore` de `studio/` é o que vale.
    - **Porta**: `8000`.
    - **Volumes**: monte um volume persistente em `/srv/studio/data`.
    - **Domínio**: informe o domínio (o Easypanel/Traefik emite o TLS). A aplicação respeita
@@ -146,6 +151,11 @@ STUDIO_RUNTIME_PREFIX=/api/v1
 STUDIO_CORS_ORIGINS=https://seu-dominio.exemplo
 STUDIO_MSSQL_DRIVER=ODBC Driver 18 for SQL Server
 ```
+
+> **`STUDIO_DATABASE_URL` exige o driver explícito.** Use `postgresql+psycopg://`. A imagem
+> instala `psycopg` 3 (`.[postgres]`), não `psycopg2`; colar a URL crua do Easypanel
+> (`postgresql://…`) faz o SQLAlchemy procurar `psycopg2` e falhar no start com
+> `ModuleNotFoundError`. O host é o hostname interno do serviço Postgres do Easypanel.
 
 4. **Deploy**. No start, a aplicação aplica as migrações, cria o administrador inicial (se a
    tabela estiver vazia) e instala as rotas publicadas.
@@ -294,11 +304,13 @@ curl -H "X-API-Key: sk_live_xxxxxxxxxxxxxxxx" \
    com N réplicas o limite efetivo é `N ×` o configurado.
 2. **Modo avançado** (código Python) roda em subprocesso isolado com timeout, mas é um
    sandbox **de camada de aplicação**, não uma jaula de sistema operacional.
-3. **Rota-cauda da SPA** — qualquer caminho GET não reconhecido devolve o `index.html`.
-   Um caminho de API grafado errado responde HTML 200 em vez de JSON 404.
+3. **Rota-cauda da SPA** — a rota-cauda serve o `index.html` para caminhos de navegação
+   (o painel usa rotas de hash) e arquivos reais quando existem. Os prefixos reservados
+   (`api` e o `STUDIO_RUNTIME_PREFIX`) são excluídos: um caminho de API grafado errado
+   responde **404 com envelope JSON**, nunca HTML 200 (corrigido em W10.2).
 4. **`alembic check` / migrações** — validados contra SQLite; o schema é compatível com
    PostgreSQL, mas o caminho MSSQL de metadados não é usado (o metadados é sempre
    Postgres/SQLite).
-5. **Testes com infraestrutura externa** — os marcados `mssql` e `docker` são pulados por
-   ausência de SQL Server real e do binário Docker no ambiente de desenvolvimento; veja o
-   relatório final.
+5. **Testes com infraestrutura externa** — o teste de fumaça do Docker foi **executado**
+   (`STUDIO_TEST_DOCKER=1`, 1 passed); o marcado `mssql` permanece pulado por ausência de
+   SQL Server real no ambiente de desenvolvimento; veja o relatório final.

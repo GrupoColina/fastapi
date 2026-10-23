@@ -117,7 +117,7 @@ Produto vive em `studio/`; o framework em `fastapi/` **não é modificado**.
 
 | ID | Tarefa | Depende de | Critério de aceitação | Estado |
 |----|--------|-----------|----------------------|--------|
-| W9.1 | Suíte de testes (unitário, integração, segurança, e2e) | W6.7 | `pytest` verde (166 passed, 7 skipped); testes de infra externa marcados | done |
+| W9.1 | Suíte de testes (unitário, integração, segurança, e2e) | W6.7 | `pytest` verde (167 passed, 6 skipped); testes de infra externa marcados | done |
 | W9.2 | Dockerfile multi-stage | W9.1 | `docker build` conclui (imagem `fastapi-studio:latest`) | done |
 | W9.3 | Docker Compose (app + Postgres) e variante MSSQL | W9.2 | `docker compose up` sobe, `/health` responde 200, login do admin responde 200 e o fluxo vertical roda dentro do container | done |
 | W9.4 | Documentação de instalação/operação (Easypanel) | W9.3 | `docs/deployment-easypanel.md` publicada | done |
@@ -131,6 +131,16 @@ Produto vive em `studio/`; o framework em `fastapi/` **não é modificado**.
 | W10.2 | Rota-cauda da SPA mascarava 404 de API | W6.7 | `GET /api/<inexistente>` devolve 404 com envelope JSON, não HTML 200 | done |
 | W10.3 | Constante HTTP 422 depreciada no Starlette | W2.7 | sem `StarletteDeprecationWarning` de 422 nas execuções | done |
 | W10.4 | Variável morta em `admin/endpoints.py` | W3.x | sem atribuição não utilizada na criação de endpoint | done |
+| W10.5 | `Build Path` do Easypanel no contexto errado | W9.4 | build falhava com `failed to calculate checksum ... "/app": not found`; corrigido com `Build Path = /studio` e documentado em `docs/deployment-easypanel.md` §4 | done |
+
+## W11 — Identidade visual (Design System Colina Core)
+
+| ID | Tarefa | Depende de | Critério de aceitação | Estado |
+|----|--------|-----------|----------------------|--------|
+| W11.1 | Tokens e componentes do Colina Core em `styles.css` | W8.6 | tema claro único; cores oficiais (`#1e3a8a`/`#e5e7eb`/`#374151`/`#64748b`) em `:root`; raio 8px (12px em modal/login); sem gradientes nem sombras pesadas | done |
+| W11.2 | Logo oficial na sidebar e no login | W11.1 | `app/web/logo-colina.png` servido com 200 e renderizado (243×80, com alfa) nas duas telas | done |
+| W11.3 | Sidebar em drawer abaixo de 768px | W11.1 | a 600px de largura a sidebar entra em off-canvas com backdrop e fecha por `Esc` | done |
+| W11.4 | Verificação de renderização real do painel | W11.2 | valores computados (`getComputedStyle`) de login, sidebar, topbar, cards, botões, tabelas e pills conferem com a especificação | done |
 
 ---
 
@@ -139,10 +149,11 @@ Produto vive em `studio/`; o framework em `fastapi/` **não é modificado**.
 | Teste | Marca | Dependência | Execução |
 |-------|-------|-------------|----------|
 | `tests/test_mssql_adapter.py` | `pytest.mark.mssql` | SQL Server real + driver ODBC 18 | `STUDIO_TEST_MSSQL_DSN=... pytest -m mssql` |
-| `tests/test_docker_smoke.py` | `pytest.mark.docker` | Docker + imagem construída | `pytest -m docker` |
+| `tests/test_docker_smoke.py` | `pytest.mark.docker` | Docker + compose | **executado**: `STUDIO_TEST_DOCKER=1 pytest tests/test_docker_smoke.py` → 1 passed |
 
 Quando a infraestrutura não está disponível, os testes são **coletados mas não executados**
 (skip automático por ausência de variável de ambiente), e isso é informado no relatório.
+O `test_docker_smoke.py` já foi executado com sucesso no ambiente local (Docker disponível).
 
 ---
 
@@ -164,8 +175,11 @@ Desktop (engine 29.7.2, Compose v5.4.0).
 | 9 | `GET /api/v1/openapi.json` | 200 |
 | 10 | `POST /api/admin/auth/login` (admin do bootstrap) | 200, `access_token` de 304 chars |
 | 11 | E2E dentro do container (script piped em `docker compose exec`) | login → projeto → datasource → test → discover → authorize → endpoint → validate → publish → API key → consumo (200/401/422) → OpenAPI → telemetria: `TUDO OK` |
+| 12 | `$env:STUDIO_TEST_DOCKER='1'; pytest tests/test_docker_smoke.py` | `1 passed` |
+| 13 | `$env:STUDIO_TEST_DOCKER='1'; pytest -p no:warnings` (+ variante `TZ=UTC`) | `167 passed, 6 skipped` |
+| 14 | `GET /` · `/styles.css` · `/logo-colina.png` · `/app.js` | 200 (`text/html` 618 B · CSS 16813 B · PNG 14749 B · JS 9459 B) |
+| 15 | Renderização real no navegador (Chrome DevTools, painel em `127.0.0.1:8011`) com `getComputedStyle` | login: card 420px/rai 12px, `h1` `rgb(30,58,138)` 24px, logo 243×56; sidebar branca com borda 1px `rgb(229,231,235)` e item ativo `rgb(238,242,251)`/`rgb(30,58,138)` peso 600; topbar branca sem sombra; card raio 8px e sombra `rgba(15,23,42,0.04)`; botão primário `rgb(30,58,138)` raio 8px; `th` 11px/600 maiúsculas; pills `rgb(236,253,245)`/`rgb(4,120,87)`; a 600px a sidebar vira drawer (`left:-264` → `0`, backdrop visível) e fecha por `Esc` |
 
-Os 7 testes `skipped` são 6 de `tests/test_mssql_adapter.py` (falta `STUDIO_TEST_MSSQL_DSN`)
-e 1 de `tests/test_docker_smoke.py` (sem `STUDIO_TEST_DOCKER`). Nenhum deles foi declarado
-aprovado.
+Os 6 testes `skipped` são de `tests/test_mssql_adapter.py` (falta `STUDIO_TEST_MSSQL_DSN`).
+Nenhum deles foi declarado aprovado.
 
