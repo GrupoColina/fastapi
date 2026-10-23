@@ -30,7 +30,7 @@ function projectSelectHtml(projects, selectedId) {
   return `<label class="field field--inline"><span>Projeto</span><select id="project-select">${options}</select></label>`;
 }
 
-function datasourceModal(source, onDone) {
+function datasourceModal(source, onDone, projectId) {
   const isEdit = Boolean(source && source.id);
   const kind = (source && source.kind) || 'sqlserver';
   const options = (source && source.options) || {};
@@ -78,11 +78,16 @@ function datasourceModal(source, onDone) {
         const values = readForm(form);
         const payload = {
           name: values.name,
-          kind: values.kind,
           is_active: values.is_active,
           allow_write: values.allow_write,
         };
-        if (!isEdit) payload.slug = values.slug;
+        if (!isEdit) {
+          payload.slug = values.slug;
+          // `kind` e `project_id` so existem na criacao: DatasourceUpdate nao aceita
+          // campos extras, e o tipo da fonte nao muda depois de criada.
+          payload.kind = values.kind;
+          payload.project_id = projectId;
+        }
         if (values.kind === 'sqlserver') {
           payload.host = values.host;
           payload.port = values.port;
@@ -216,7 +221,7 @@ export async function renderDatasources(view, params) {
     location.hash = `#/fontes/${event.target.value}`;
   });
 
-  const modal = datasourceModal(null, reload);
+  const modal = datasourceModal(null, reload, selectedId);
   qs('#btn-new-source', view).addEventListener('click', () => openModal('Nova fonte de dados', modal.html, { onMount: modal.onMount }));
 
   async function showObjects(sourceId) {

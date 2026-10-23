@@ -365,9 +365,23 @@ python-tds, mas a execução contra um servidor real depende de infraestrutura e
 - **Rota-cauda da SPA**: caminhos fora de `/api` e do prefixo do runtime devolvem o
   `index.html` (comportamento normal de SPA); a partir desta rodada, caminhos sob `/api`
   devolvem 404 JSON.
+- **Tipos de fonte de dados suportados: `sqlserver` e `sqlite`.** O `registry` de
+  adaptadores tem exatamente essas duas entradas; MySQL/PostgreSQL/Oracle **não** são
+  suportados como banco alvo (o PostgreSQL é usado apenas como banco de metadados). O
+  painel não oferece outra opção no campo "Tipo".
+- **Editar uma fonte de dados substitui `options` por inteiro.** O formulário envia apenas
+  `encrypt`/`trust_server_certificate`, então chaves que ele não conhece — em especial
+  `options.schemas`, gerado pelo campo "Schemas a descobrir" — são perdidas ao salvar; o
+  campo também reabre vazio porque `DatasourceOut` não devolve `discover_schemas`.
+  Registrado como **W12.1** no backlog (não corrigido nesta rodada).
 
 ### 8.3 Não verificado
 - `tests/test_mssql_adapter.py` (marca `mssql`) não foi executado — depende de SQL Server real.
+- Os payloads da SPA (JavaScript) **não têm teste automatizado**: a suíte cobre a API, não a
+  montagem do corpo das requisições no painel. Os defeitos de contrato UI↔API encontrados
+  nesta rodada (W10.6/W10.7 — `project_id` ausente na criação e `kind` indevido na edição)
+  foram cobertos por reprodução no `TestClient` e por verificação manual no navegador
+  (fluxo completo de fontes de dados, registro nº 16 deste relatório em `backlog.md`).
 - Não foram executados testes de carga, de penetração externa nem auditoria de
   dependências; os testes de segurança cobrem os controles implementados (hash de senha,
   JWT, API keys, cifra, escopos, rate limit, redação de PII).

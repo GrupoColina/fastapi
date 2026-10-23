@@ -216,6 +216,11 @@ Menu **Fontes de dados → Nova**:
 | `allow_write` | `false` (mantenha leitura; escrita exige a trava global habilitada) |
 | `discover_schemas` | `["dbo"]` (vazio = todos os schemas visíveis) |
 
+> **Tipos de fonte suportados: `sqlserver` e `sqlite`** (são as duas entradas do `registry`
+> de adaptadores, e as duas opções do campo "Tipo" no painel). MySQL, PostgreSQL e Oracle
+> não são suportados como banco alvo; o PostgreSQL aparece na composição apenas como banco
+> de metadados do Studio.
+
 Clique em **Testar conexão**. O painel mostra `ok`, latência, versão do servidor e driver
 usados. Em caso de falha, a mensagem do driver é exibida com usuário/senha já mascarados.
 

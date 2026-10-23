@@ -132,6 +132,8 @@ Produto vive em `studio/`; o framework em `fastapi/` **não é modificado**.
 | W10.3 | Constante HTTP 422 depreciada no Starlette | W2.7 | sem `StarletteDeprecationWarning` de 422 nas execuções | done |
 | W10.4 | Variável morta em `admin/endpoints.py` | W3.x | sem atribuição não utilizada na criação de endpoint | done |
 | W10.5 | `Build Path` do Easypanel no contexto errado | W9.4 | build falhava com `failed to calculate checksum ... "/app": not found`; corrigido com `Build Path = /studio` e documentado em `docs/deployment-easypanel.md` §4 | done |
+| W10.6 | Criação de fonte de dados pelo painel falhava com 422 | W8.2 | o formulário não enviava `project_id` (obrigatório em `DatasourceCreate`) → `request_validation_error`; agora "Nova fonte" cria a fonte (201) | done |
+| W10.7 | Edição de fonte de dados pelo painel falhava com 422 | W10.6 | o formulário enviava `kind` no `PATCH`, recusado por `extra="forbid"` em `DatasourceUpdate` → `extra_forbidden`; agora "Editar" salva (200) | done |
 
 ## W11 — Identidade visual (Design System Colina Core)
 
@@ -141,6 +143,12 @@ Produto vive em `studio/`; o framework em `fastapi/` **não é modificado**.
 | W11.2 | Logo oficial na sidebar e no login | W11.1 | `app/web/logo-colina.png` servido com 200 e renderizado (243×80, com alfa) nas duas telas | done |
 | W11.3 | Sidebar em drawer abaixo de 768px | W11.1 | a 600px de largura a sidebar entra em off-canvas com backdrop e fecha por `Esc` | done |
 | W11.4 | Verificação de renderização real do painel | W11.2 | valores computados (`getComputedStyle`) de login, sidebar, topbar, cards, botões, tabelas e pills conferem com a especificação | done |
+
+## W12 — Defeitos conhecidos (não corrigidos)
+
+| ID | Tarefa | Depende de | Critério de aceitação | Estado |
+|----|--------|-----------|----------------------|--------|
+| W12.1 | Editar uma fonte substitui `options` por inteiro e perde `options.schemas` | W10.7 | após salvar a edição de uma fonte criada com `discover_schemas=["dbo"]`, `options.schemas` permanece `["dbo"]` e o campo "Schemas a descobrir" reexibe o valor (hoje volta vazio porque `DatasourceOut` não devolve `discover_schemas`) | todo |
 
 ---
 
@@ -179,6 +187,8 @@ Desktop (engine 29.7.2, Compose v5.4.0).
 | 13 | `$env:STUDIO_TEST_DOCKER='1'; pytest -p no:warnings` (+ variante `TZ=UTC`) | `167 passed, 6 skipped` |
 | 14 | `GET /` · `/styles.css` · `/logo-colina.png` · `/app.js` | 200 (`text/html` 618 B · CSS 16813 B · PNG 14749 B · JS 9459 B) |
 | 15 | Renderização real no navegador (Chrome DevTools, painel em `127.0.0.1:8011`) com `getComputedStyle` | login: card 420px/rai 12px, `h1` `rgb(30,58,138)` 24px, logo 243×56; sidebar branca com borda 1px `rgb(229,231,235)` e item ativo `rgb(238,242,251)`/`rgb(30,58,138)` peso 600; topbar branca sem sombra; card raio 8px e sombra `rgba(15,23,42,0.04)`; botão primário `rgb(30,58,138)` raio 8px; `th` 11px/600 maiúsculas; pills `rgb(236,253,245)`/`rgb(4,120,87)`; a 600px a sidebar vira drawer (`left:-264` → `0`, backdrop visível) e fecha por `Esc` |
+| 16 | Fluxo de fontes de dados pela UI (Chrome DevTools): login → "Novo projeto" → "Nova fonte" (SQL Server) → "Salvar" na edição → "Nova fonte" (SQLite) | `Projeto criado.` · `Fonte criada.` (id 1, `10.10.10.5:1433/ERP`) · `Fonte atualizada.` · `Fonte criada.` (id 2, `./data/alvo.db`); antes da correção o `POST` devolvia 422 `request_validation_error` (`body.project_id: Field required`) e o `PATCH`, 422 `extra_forbidden` (`body.kind`) |
+| 17 | `$env:STUDIO_TEST_DOCKER='1'; pytest -p no:warnings` (+ variante `TZ=UTC`) após as correções W10.6/W10.7 | `167 passed, 6 skipped` (exit 0) |
 
 Os 6 testes `skipped` são de `tests/test_mssql_adapter.py` (falta `STUDIO_TEST_MSSQL_DSN`).
 Nenhum deles foi declarado aprovado.
