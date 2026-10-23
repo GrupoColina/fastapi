@@ -1,0 +1,6 @@
+# Ambiente virtual e artefatos de build do Studio
+.venv/
+*.egg-info/
+data/
+*.db
+.env

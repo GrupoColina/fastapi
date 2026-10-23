@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fastapi-studio"
+version = "1.0.0"
+description = "FastAPI Studio - plataforma visual de construcao de APIs sobre o FastAPI nativo"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.30.0",
+    "pydantic>=2.9.0",
+    "pydantic-settings>=2.4.0",
+    "sqlalchemy>=2.0.36",
+    "alembic>=1.13.0",
+    "PyJWT>=2.9.0",
+    "pwdlib[argon2]>=0.2.1",
+    "cryptography>=42.0.0",
+    "python-multipart>=0.0.18",
+    "email-validator>=2.2.0",
+    "httpx>=0.27.0",
+]
+
+[project.optional-dependencies]
+postgres = ["psycopg[binary]>=3.2.0"]
+mssql = ["pyodbc>=5.1.0", "python-tds>=1.15.0"]
+dev = [
+    "pytest>=8.3.0",
+    "pytest-timeout>=2.3.0",
+    "anyio>=4.4.0",
+]
+
+[tool.setuptools]
+packages = ["app", "app.core", "app.db", "app.schemas", "app.services", "app.services.datasources", "app.runtime", "app.api", "app.api.admin", "app.advanced"]
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+addopts = ["-q", "--strict-markers"]
+timeout = "60"
+markers = [
+    "mssql: testes que exigem um SQL Server real (STUDIO_TEST_MSSQL_DSN)",
+    "docker: testes que exigem o binario docker",
+]
+filterwarnings = ["ignore::DeprecationWarning"]

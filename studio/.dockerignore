@@ -1,0 +1,31 @@
+# Ambiente e artefatos locais
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Dados locais (bancos SQLite de desenvolvimento/teste)
+data/
+*.db
+*.sqlite3
+
+# Segredos e VCS
+.env
+.env.*
+!.env.example
+.git/
+.gitignore
+
+# Testes e ferramentas
+tests/
+_smoke.py
+*.log
+
+# Implantacao (nao precisa entrar na imagem)
+docker-compose*.yml
+Dockerfile*
+.dockerignore

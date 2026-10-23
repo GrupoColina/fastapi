@@ -1,0 +1,70 @@
+# FastAPI Studio - composicao de producao (painel + banco de metadados Postgres).
+#
+# Passos:
+#   1. cp .env.example .env
+#   2. edite o .env e defina STUDIO_SECRET_KEY (e, de preferencia, STUDIO_ENCRYPTION_KEY)
+#   3. docker compose up --build -d
+#   4. acesse http://localhost:8000/ e autentique com o administrador do bootstrap
+#
+# O banco de metadados fica no volume `studio-db` e os dados locais do app no volume
+# `studio-data`. O SQL Server (banco alvo) e externo: cadastre a conexao pelo painel.
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: studio
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-studio}
+      POSTGRES_DB: studio
+    volumes:
+      - studio-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U studio -d studio"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+
+  app:
+    build:
+      context: .
+      args:
+        # false -> imagem sem o driver ODBC 18 (usa o fallback python-tds no SQL Server)
+        INSTALL_MSSQL_ODBC: ${INSTALL_MSSQL_ODBC:-true}
+    image: fastapi-studio:latest
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      STUDIO_ENV: production
+      STUDIO_LOG_LEVEL: ${STUDIO_LOG_LEVEL:-INFO}
+
+      # Obrigatorio: a aplicacao recusa subir em producao com a chave de exemplo.
+      STUDIO_SECRET_KEY: ${STUDIO_SECRET_KEY:-troque-esta-chave-por-uma-aleatoria-de-48-bytes}
+      STUDIO_ENCRYPTION_KEY: ${STUDIO_ENCRYPTION_KEY:-}
+
+      STUDIO_DATABASE_URL: postgresql+psycopg://studio:${POSTGRES_PASSWORD:-studio}@db:5432/studio
+      STUDIO_RUN_MIGRATIONS_ON_STARTUP: "true"
+
+      STUDIO_BOOTSTRAP_ADMIN_EMAIL: ${STUDIO_BOOTSTRAP_ADMIN_EMAIL:-admin@example.com}
+      STUDIO_BOOTSTRAP_ADMIN_PASSWORD: ${STUDIO_BOOTSTRAP_ADMIN_PASSWORD:-TroqueEstaSenha123!}
+      STUDIO_BOOTSTRAP_ADMIN_NAME: ${STUDIO_BOOTSTRAP_ADMIN_NAME:-Administrador}
+
+      STUDIO_RUNTIME_PREFIX: ${STUDIO_RUNTIME_PREFIX:-/api/v1}
+      STUDIO_RATE_LIMIT_PER_MINUTE: ${STUDIO_RATE_LIMIT_PER_MINUTE:-120}
+      STUDIO_CORS_ORIGINS: ${STUDIO_CORS_ORIGINS:-*}
+      STUDIO_ALLOW_WRITE_OPERATIONS: ${STUDIO_ALLOW_WRITE_OPERATIONS:-false}
+      STUDIO_MSSQL_DRIVER: ${STUDIO_MSSQL_DRIVER:-ODBC Driver 18 for SQL Server}
+      STUDIO_QUERY_TIMEOUT: ${STUDIO_QUERY_TIMEOUT:-30}
+      STUDIO_MAX_ROWS: ${STUDIO_MAX_ROWS:-1000}
+      STUDIO_ADVANCED_ENABLED: ${STUDIO_ADVANCED_ENABLED:-true}
+    ports:
+      - "${STUDIO_PORT:-8000}:8000"
+    volumes:
+      - studio-data:/srv/studio/data
+    restart: unless-stopped
+
+volumes:
+  studio-db:
+  studio-data:

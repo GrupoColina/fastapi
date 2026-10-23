@@ -1,0 +1,76 @@
+# FastAPI Studio - composicao para exercitar o caminho do SQL Server sem um servidor
+# corporativo: sobe um SQL Server 2022 (Developer) como banco ALVO, alem do Postgres de
+# metadados e da aplicacao.
+#
+# Uso:
+#   cp .env.example .env      # defina STUDIO_SECRET_KEY
+#   docker compose -f docker-compose.mssql.yml up --build -d
+#
+# Depois, no painel (http://localhost:8000/), cadastre a conexao:
+#   kind=sqlserver, host=mssql, port=1433, database=master, username=sa,
+#   password=<MSSQL_SA_PASSWORD>, options={"encrypt": false, "trust_server_certificate": true}
+#
+# AVISO: esta composicao e para validacao/homologacao. Nao exponha a porta 1433 na internet.
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: studio
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-studio}
+      POSTGRES_DB: studio
+    volumes:
+      - studio-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U studio -d studio"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: Developer
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:-Str0ng!Passw0rd2026}
+    ports:
+      - "${MSSQL_PORT:-1433}:1433"
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -Q 'SELECT 1' || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 30s
+    restart: unless-stopped
+
+  app:
+    build:
+      context: .
+      args:
+        INSTALL_MSSQL_ODBC: "true"
+    image: fastapi-studio:latest
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      STUDIO_ENV: production
+      STUDIO_LOG_LEVEL: ${STUDIO_LOG_LEVEL:-INFO}
+      STUDIO_SECRET_KEY: ${STUDIO_SECRET_KEY:-troque-esta-chave-por-uma-aleatoria-de-48-bytes}
+      STUDIO_ENCRYPTION_KEY: ${STUDIO_ENCRYPTION_KEY:-}
+      STUDIO_DATABASE_URL: postgresql+psycopg://studio:${POSTGRES_PASSWORD:-studio}@db:5432/studio
+      STUDIO_RUN_MIGRATIONS_ON_STARTUP: "true"
+      STUDIO_BOOTSTRAP_ADMIN_EMAIL: ${STUDIO_BOOTSTRAP_ADMIN_EMAIL:-admin@example.com}
+      STUDIO_BOOTSTRAP_ADMIN_PASSWORD: ${STUDIO_BOOTSTRAP_ADMIN_PASSWORD:-TroqueEstaSenha123!}
+      STUDIO_MSSQL_DRIVER: "ODBC Driver 18 for SQL Server"
+      STUDIO_CORS_ORIGINS: ${STUDIO_CORS_ORIGINS:-*}
+    ports:
+      - "${STUDIO_PORT:-8000}:8000"
+    volumes:
+      - studio-data:/srv/studio/data
+    restart: unless-stopped
+
+volumes:
+  studio-db:
+  studio-data:

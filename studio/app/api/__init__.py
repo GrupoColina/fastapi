@@ -1,0 +1,1 @@
+"""API administrativa do Studio."""
